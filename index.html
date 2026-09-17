@@ -96,7 +96,11 @@ function save() {
 }
 function pad(n) { return String(n).padStart(2, '0'); }
 function dateKey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
-function todayKey() { return dateKey(new Date()); }
+function todayKey() {
+  const d = new Date();
+  if (d.getHours() < 3) d.setDate(d.getDate() - 1);
+  return dateKey(d);
+}
 function yen(n) { return n.toLocaleString() + '円'; }
 function totalPcs(r) { return (r.box || 0) * 20 + (r.pcs || 0); }
 
