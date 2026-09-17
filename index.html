@@ -242,6 +242,7 @@ function importData() {
     data = obj;
     save();
     renderTop();
+    document.getElementById('backup').value = '';
     alert('読み込みました');
   } catch (e) {
     alert('データの形式が正しくありません');
