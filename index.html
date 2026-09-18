@@ -25,6 +25,7 @@ body{font-family:-apple-system,sans-serif;background:#111;color:#eee;padding:16p
 .btn.flash{background:#e08e0b}
 .btn.gray{background:#444}
 .btn.blue{background:#1976a8}
+.btn.red{background:#8a2b2b}
 .small{display:flex;gap:8px}
 .small .btn{font-size:14px;padding:10px}
 .note{color:#888;font-size:12px;margin-top:10px;line-height:1.5}
@@ -77,6 +78,7 @@ tr.total td{border-bottom:1px solid #333;padding-bottom:10px;font-weight:bold}
     </div>
     <input type="file" id="fileInput" accept=".json,application/json" style="display:none">
     <div class="note">保存したファイルは「ファイル」アプリやiCloud Driveに置けます。復元すると今のデータは上書きされます。</div>
+    <button class="btn red" onclick="clearAll()" style="margin-top:16px">記録を全消去</button>
   </div>
 </div>
 
@@ -247,6 +249,15 @@ function showTop() {
   document.getElementById('page-top').style.display = 'block';
   renderTop();
   window.scrollTo(0, 0);
+}
+
+function clearAll() {
+  if (!confirm('すべての記録を消します。よろしいですか?')) return;
+  if (!confirm('本当に消しますか? 元に戻せません。')) return;
+  data = {};
+  save();
+  renderTop();
+  alert('消去しました');
 }
 
 function exportFile() {
