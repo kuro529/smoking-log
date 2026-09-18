@@ -24,7 +24,7 @@ body{font-family:-apple-system,sans-serif;background:#111;color:#eee;padding:16p
 .btn.blue{background:#1976a8}
 .small{display:flex;gap:8px}
 .small .btn{font-size:14px;padding:10px}
-textarea{width:100%;height:80px;margin-top:10px;background:#2a2a2a;color:#eee;border:1px solid #444;border-radius:8px;font-size:12px;padding:6px}
+.note{color:#888;font-size:12px;margin-top:10px;line-height:1.5}
 #page-log{display:none}
 .head{position:fixed;top:0;left:0;right:0;background:#111;padding:10px 12px;z-index:10;border-bottom:1px solid #333}
 .back{margin-bottom:8px;padding:6px 12px;font-size:14px;border:none;border-radius:8px;background:#333;color:#eee}
@@ -69,10 +69,11 @@ tr.total td{border-bottom:1px solid #333;padding-bottom:10px;font-weight:bold}
   <div class="card" style="margin-top:30px">
     <h2>バックアップ</h2>
     <div class="small">
-      <button class="btn gray" onclick="exportData()">書き出し</button>
-      <button class="btn gray" onclick="importData()">読み込み</button>
+      <button class="btn gray" onclick="exportFile()">ファイルに保存</button>
+      <button class="btn gray" onclick="pickFile()">ファイルから復元</button>
     </div>
-    <textarea id="backup" placeholder="書き出し→全選択してコピーして保管。読み込み→ここに貼り付けてから押す"></textarea>
+    <input type="file" id="fileInput" accept=".json,application/json" style="display:none">
+    <div class="note">保存したファイルは「ファイル」アプリやiCloud Driveに置けます。復元すると今のデータは上書きされます。</div>
   </div>
 </div>
 
@@ -245,28 +246,44 @@ function showTop() {
   window.scrollTo(0, 0);
 }
 
-function exportData() {
-  const ta = document.getElementById('backup');
-  ta.value = JSON.stringify(data);
-  ta.focus();
-  ta.select();
+function exportFile() {
+  if (!Object.keys(data).length) { alert('保存する記録がありません'); return; }
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'smoking-' + dateKey(new Date()) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function importData() {
-  const txt = document.getElementById('backup').value.trim();
-  if (!txt) { alert('貼り付けてから押してください'); return; }
-  try {
-    const obj = JSON.parse(txt);
-    if (typeof obj !== 'object' || Array.isArray(obj)) throw new Error('形式エラー');
-    if (!confirm('今のデータを上書きします。よろしいですか?')) return;
-    data = obj;
-    save();
-    renderTop();
-    document.getElementById('backup').value = '';
-    alert('読み込みました');
-  } catch (e) {
-    alert('読み込み失敗: ' + e.name + ' / ' + e.message);
-  }
+
+function pickFile() {
+  document.getElementById('fileInput').click();
 }
+
+document.getElementById('fileInput').addEventListener('change', function (ev) {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const obj = JSON.parse(r.result);
+      if (typeof obj !== 'object' || Array.isArray(obj)) throw new Error('形式エラー');
+      if (!confirm('今のデータを上書きします。よろしいですか?')) return;
+      data = obj;
+      save();
+      renderTop();
+      alert('復元しました');
+    } catch (e) {
+      alert('復元失敗: ' + e.name + ' / ' + e.message);
+    }
+  };
+  r.onerror = () => alert('ファイルを読めませんでした');
+  r.readAsText(f);
+  ev.target.value = '';
+});
 
 tick();
 setInterval(tick, 1000);
