@@ -18,8 +18,10 @@ body{font-family:-apple-system,sans-serif;background:#111;color:#eee;padding:16p
 .row input{width:64px;font-size:18px;padding:6px;border-radius:8px;border:1px solid #444;background:#2a2a2a;color:#eee;text-align:center}
 .prev{color:#aaa}
 .today{color:#8f8;font-size:15px;text-align:right;margin-top:6px}
-.btn{display:block;width:100%;padding:14px;font-size:17px;border:none;border-radius:12px;margin-top:10px;color:#fff;background:#2e7d32}
+.btn{display:block;width:100%;padding:14px;font-size:17px;border:none;border-radius:12px;margin-top:10px;color:#fff;background:#2e7d32;transition:background .2s}
+.btn.flash{background:#e08e0b}
 .btn.gray{background:#444}
+.btn.blue{background:#1976a8}
 .small{display:flex;gap:8px}
 .small .btn{font-size:14px;padding:10px}
 textarea{width:100%;height:80px;margin-top:10px;background:#2a2a2a;color:#eee;border:1px solid #444;border-radius:8px;font-size:12px;padding:6px}
@@ -36,6 +38,7 @@ tr.first td{padding-top:10px}
 tr.total td{border-bottom:1px solid #333;padding-bottom:10px;font-weight:bold}
 .sum{background:#1e1e1e;border-radius:12px;padding:10px;margin:8px 0 0}
 .sum tr.total td{border-bottom:none}
+.sum tr.avg td{color:#8cf;padding-top:6px;border-top:1px solid #333}
 .empty{color:#888;text-align:center;margin-top:30px}
 </style>
 </head>
@@ -60,8 +63,8 @@ tr.total td{border-bottom:1px solid #333;padding-bottom:10px;font-weight:bold}
     <div class="today" id="iqos-today"></div>
   </div>
 
-  <button class="btn" onclick="saveToday()">保存</button>
-  <button class="btn gray" onclick="showLog()" style="margin-top:24px">記録ページへ</button>
+  <button class="btn" id="saveBtn" onclick="saveToday()">保存</button>
+  <button class="btn blue" onclick="showLog()" style="margin-top:24px">記録ページ</button>
 
   <div class="card" style="margin-top:30px">
     <h2>バックアップ</h2>
@@ -163,7 +166,9 @@ function saveToday() {
   data[tk] = rec;
   save();
   renderTop();
-  alert('保存しました');
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('flash');
+  setTimeout(() => btn.classList.remove('flash'), 600);
 }
 
 function buildMonths() {
@@ -188,7 +193,7 @@ function renderLog() {
   const pre = new Date().getFullYear() + '-' + pad(curMonth) + '-';
   const keys = Object.keys(data).filter(k => k.startsWith(pre)).sort().reverse();
   let rows = '';
-  let sumM = 0, sumQ = 0;
+  let sumM = 0, sumQ = 0, days = 0;
   keys.forEach(k => {
     const m = smoked(k, 'mev');
     const q = smoked(k, 'iqos');
@@ -196,6 +201,7 @@ function renderLog() {
     const mv = m || 0, qv = q || 0;
     sumM += mv;
     sumQ += qv;
+    days++;
     const d = Number(k.slice(8)) + '日';
     rows += line('first', d, 'メビウス', m, 29);
     rows += line('', '', 'IQOS', q, 31);
@@ -204,10 +210,15 @@ function renderLog() {
   let sumHtml = '';
   let html = '';
   if (rows) {
+    const totalPc = sumM + sumQ;
+    const totalYen = sumM * 29 + sumQ * 31;
+    const avgPc = (totalPc / days).toFixed(1);
+    const avgYen = Math.round(totalYen / days);
     sumHtml += '<div class="sum"><table>';
     sumHtml += line('', curMonth + '月', 'メビウス', sumM, 29);
     sumHtml += line('', '', 'IQOS', sumQ, 31);
-    sumHtml += '<tr class="total"><td></td><td>合計</td><td class="num">' + (sumM + sumQ) + '本</td><td class="num">' + yen(sumM * 29 + sumQ * 31) + '</td></tr>';
+    sumHtml += '<tr class="total"><td></td><td>合計</td><td class="num">' + totalPc + '本</td><td class="num">' + yen(totalYen) + '</td></tr>';
+    sumHtml += '<tr class="avg"><td></td><td>平均(' + days + '日)</td><td class="num">' + avgPc + '本</td><td class="num">' + yen(avgYen) + '</td></tr>';
     sumHtml += '</table></div>';
     html = '<table>' + rows + '</table>';
   } else {
