@@ -93,7 +93,12 @@ function load() {
   try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; }
 }
 function save() {
-  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { alert('保存に失敗しました'); }
+  try {
+    localStorage.setItem(KEY, JSON.stringify(data));
+  } catch (e) {
+    alert('保存に失敗: ' + e.name + ' / ' + e.message);
+    throw e;
+  }
 }
 function pad(n) { return String(n).padStart(2, '0'); }
 function dateKey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -248,7 +253,7 @@ function importData() {
     document.getElementById('backup').value = '';
     alert('読み込みました');
   } catch (e) {
-    alert('データの形式が正しくありません');
+    alert('読み込み失敗: ' + e.name + ' / ' + e.message);
   }
 }
 
