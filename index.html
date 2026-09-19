@@ -11,25 +11,24 @@
 <title>喫煙記録</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,sans-serif;background:#111;color:#eee;padding:16px;padding-bottom:40px}
-.clock{text-align:center;font-size:24px;font-weight:bold;margin:8px 0 16px}
-.card{background:#1e1e1e;border-radius:12px;padding:14px;margin-bottom:14px}
-.card h2{font-size:18px;margin-bottom:10px}
+body{font-family:-apple-system,sans-serif;background:#111;color:#eee;padding:10px 12px 16px}
+.clock{text-align:center;font-size:19px;font-weight:bold;margin:2px 0 8px}
+.card{background:#1e1e1e;border-radius:10px;padding:8px 10px;margin-bottom:8px}
+.card h2{font-size:15px;margin-bottom:4px}
 .mev h2{color:#6cf}
 .iqos h2{color:#fc6}
-.row{display:flex;align-items:center;justify-content:space-between;margin:10px 0;font-size:15px}
-.row input{width:64px;font-size:18px;padding:6px;border-radius:8px;border:1px solid #444;background:#2a2a2a;color:#eee;text-align:center}
+.row{display:flex;align-items:center;justify-content:space-between;margin:4px 0;font-size:14px}
+.row input{width:56px;font-size:16px;padding:3px;border-radius:6px;border:1px solid #444;background:#2a2a2a;color:#eee;text-align:center}
 .prev{color:#aaa}
-.today{color:#8f8;font-size:15px;text-align:right;margin-top:6px}
-.btn{display:block;width:100%;padding:14px;font-size:17px;border:none;border-radius:12px;margin-top:10px;color:#fff;background:#2e7d32;transition:background .2s}
+.today{color:#8f8;font-size:14px;text-align:right;margin-top:3px;min-height:18px}
+.btn{display:block;width:100%;padding:9px;font-size:15px;border:none;border-radius:9px;color:#fff;background:#2e7d32;transition:background .2s}
 .btn.flash{background:#e08e0b}
 .btn.gray{background:#444}
 .btn.blue{background:#1976a8}
 .btn.red{background:#8a2b2b}
-.small{display:flex;gap:8px}
-.small .btn{font-size:14px;padding:10px}
-.note{color:#888;font-size:12px;margin-top:10px;line-height:1.5}
-textarea{width:100%;height:80px;margin-top:10px;background:#2a2a2a;color:#eee;border:1px solid #444;border-radius:8px;font-size:12px;padding:6px}
+.small{display:flex;gap:6px;margin-top:6px}
+.small .btn{font-size:13px;padding:7px}
+textarea{width:100%;height:44px;margin-top:6px;background:#2a2a2a;color:#eee;border:1px solid #444;border-radius:6px;font-size:11px;padding:4px}
 #page-log{display:none}
 .head{position:fixed;top:0;left:0;right:0;background:#111;padding:10px 12px;z-index:10;border-bottom:1px solid #333}
 .back{margin-bottom:8px;padding:6px 12px;font-size:14px;border:none;border-radius:8px;background:#333;color:#eee}
@@ -69,26 +68,27 @@ tr.total td{border-bottom:1px solid #333;padding-bottom:10px;font-weight:bold}
   </div>
 
   <button class="btn" id="saveBtn" onclick="saveToday()">保存</button>
-  <button class="btn blue" onclick="showLog()" style="margin-top:24px">記録ページ</button>
+  <button class="btn blue" onclick="showLog()" style="margin-top:8px">記録ページ</button>
 
-  <div class="card" style="margin-top:30px">
+  <div class="card" style="margin-top:12px">
     <h2>バックアップ</h2>
-    <div class="small">
+    <div class="small" style="margin-top:0">
       <button class="btn gray" onclick="exportFile()">ファイルに保存</button>
       <button class="btn gray" onclick="pickFile()">ファイルから復元</button>
     </div>
     <input type="file" id="fileInput" accept=".json,application/json" style="display:none">
-    <div class="small" style="margin-top:8px">
+    <div class="small">
       <button class="btn gray" onclick="exportText()">書き出し</button>
       <button class="btn gray" onclick="importText()">読み込み</button>
     </div>
-    <textarea id="backup" placeholder="書き出し→全選択してコピーして保管。読み込み→ここに貼り付けてから押す"></textarea>
-    <div class="small" style="margin-top:16px">
+    <textarea id="backup" placeholder="書き出し→コピーして保管 / 読み込み→ここに貼り付け"></textarea>
+    <div class="small">
       <button class="btn blue" onclick="refreshView()">表示の更新</button>
       <button class="btn blue" onclick="reloadPage()">リロード</button>
     </div>
-    <button class="btn red" onclick="clearAll()" style="margin-top:16px">記録を全消去</button>
-    <div class="note">ファイル保存は「ファイル」アプリやiCloud Driveに置けます。復元・読み込みは今のデータを上書きします。</div>
+    <div class="small">
+      <button class="btn red" onclick="clearAll()">記録を全消去</button>
+    </div>
   </div>
 </div>
 
