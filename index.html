@@ -29,6 +29,7 @@ body{font-family:-apple-system,sans-serif;background:#111;color:#eee;padding:16p
 .small{display:flex;gap:8px}
 .small .btn{font-size:14px;padding:10px}
 .note{color:#888;font-size:12px;margin-top:10px;line-height:1.5}
+textarea{width:100%;height:80px;margin-top:10px;background:#2a2a2a;color:#eee;border:1px solid #444;border-radius:8px;font-size:12px;padding:6px}
 #page-log{display:none}
 .head{position:fixed;top:0;left:0;right:0;background:#111;padding:10px 12px;z-index:10;border-bottom:1px solid #333}
 .back{margin-bottom:8px;padding:6px 12px;font-size:14px;border:none;border-radius:8px;background:#333;color:#eee}
@@ -77,8 +78,17 @@ tr.total td{border-bottom:1px solid #333;padding-bottom:10px;font-weight:bold}
       <button class="btn gray" onclick="pickFile()">ファイルから復元</button>
     </div>
     <input type="file" id="fileInput" accept=".json,application/json" style="display:none">
-    <div class="note">保存したファイルは「ファイル」アプリやiCloud Driveに置けます。復元すると今のデータは上書きされます。</div>
+    <div class="small" style="margin-top:8px">
+      <button class="btn gray" onclick="exportText()">書き出し</button>
+      <button class="btn gray" onclick="importText()">読み込み</button>
+    </div>
+    <textarea id="backup" placeholder="書き出し→全選択してコピーして保管。読み込み→ここに貼り付けてから押す"></textarea>
+    <div class="small" style="margin-top:16px">
+      <button class="btn blue" onclick="refreshView()">表示の更新</button>
+      <button class="btn blue" onclick="reloadPage()">リロード</button>
+    </div>
     <button class="btn red" onclick="clearAll()" style="margin-top:16px">記録を全消去</button>
+    <div class="note">ファイル保存は「ファイル」アプリやiCloud Driveに置けます。復元・読み込みは今のデータを上書きします。</div>
   </div>
 </div>
 
@@ -251,6 +261,15 @@ function showTop() {
   window.scrollTo(0, 0);
 }
 
+function refreshView() {
+  data = load();
+  renderTop();
+  tick();
+}
+function reloadPage() {
+  location.href = location.pathname + '?t=' + Date.now();
+}
+
 function clearAll() {
   if (!confirm('すべての記録を消します。よろしいですか?')) return;
   if (!confirm('本当に消しますか? 元に戻せません。')) return;
@@ -277,18 +296,41 @@ function pickFile() {
   document.getElementById('fileInput').click();
 }
 
+function applyImport(obj) {
+  if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) throw new Error('形式エラー');
+  if (!confirm('今のデータを上書きします。よろしいですか?')) return false;
+  data = obj;
+  save();
+  renderTop();
+  return true;
+}
+
+function exportText() {
+  const ta = document.getElementById('backup');
+  ta.value = JSON.stringify(data);
+  ta.focus();
+  ta.select();
+}
+
+function importText() {
+  const txt = document.getElementById('backup').value.trim();
+  if (!txt) { alert('貼り付けてから押してください'); return; }
+  try {
+    if (!applyImport(JSON.parse(txt))) return;
+    document.getElementById('backup').value = '';
+    alert('読み込みました');
+  } catch (e) {
+    alert('読み込み失敗: ' + e.name + ' / ' + e.message);
+  }
+}
+
 document.getElementById('fileInput').addEventListener('change', function (ev) {
   const f = ev.target.files[0];
   if (!f) return;
   const r = new FileReader();
   r.onload = () => {
     try {
-      const obj = JSON.parse(r.result);
-      if (typeof obj !== 'object' || Array.isArray(obj)) throw new Error('形式エラー');
-      if (!confirm('今のデータを上書きします。よろしいですか?')) return;
-      data = obj;
-      save();
-      renderTop();
+      if (!applyImport(JSON.parse(r.result))) return;
       alert('復元しました');
     } catch (e) {
       alert('復元失敗: ' + e.name + ' / ' + e.message);
