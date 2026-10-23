@@ -43,6 +43,9 @@ tr.total td{border-bottom:1px solid #333;padding-bottom:10px;font-weight:bold}
 .sum{background:#1e1e1e;border-radius:12px;padding:10px;margin:8px 0 0}
 .sum tr.total td{border-bottom:none}
 .sum tr.avg td{color:#8cf;padding-top:6px;border-top:1px solid #333}
+.lockbtn{padding:7px;font-size:13px;border:none;border-radius:8px;color:#fff;margin-top:8px}
+.lockbtn.off{background:#1976a8}
+.lockbtn.on{background:#555}
 .empty{color:#888;text-align:center;margin-top:30px}
 </style>
 </head>
@@ -103,9 +106,11 @@ tr.total td{border-bottom:1px solid #333;padding-bottom:10px;font-weight:bold}
 
 <script>
 const KEY = 'smokeLog';
+const LOCK_KEY = 'smokeLocks';
 const PRICE = { mev: 29, iqos: 31 };
 const TYPES = ['mev', 'iqos'];
 let data = load();
+let locks = loadLocks();
 let curMonth = new Date().getMonth() + 1;
 
 function load() {
@@ -119,6 +124,18 @@ function save() {
     throw e;
   }
 }
+function loadLocks() {
+  try { return JSON.parse(localStorage.getItem(LOCK_KEY)) || {}; } catch (e) { return {}; }
+}
+function saveLocks() {
+  try {
+    localStorage.setItem(LOCK_KEY, JSON.stringify(locks));
+  } catch (e) {
+    alert('保存に失敗: ' + e.name + ' / ' + e.message);
+  }
+}
+function monthKeyOf(dayKey) { return dayKey.slice(0, 7); }
+
 function pad(n) { return String(n).padStart(2, '0'); }
 function dateKey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
 function todayKey() {
@@ -205,8 +222,18 @@ function line(cls, day, label, v, price) {
     '<td class="num">' + (v === null ? '-' : yen(v * price)) + '</td></tr>';
 }
 
+function toggleLock() {
+  const ym = new Date().getFullYear() + '-' + pad(curMonth);
+  if (locks[ym]) delete locks[ym]; else locks[ym] = true;
+  saveLocks();
+  renderLog();
+}
+
 function renderLog() {
-  const pre = new Date().getFullYear() + '-' + pad(curMonth) + '-';
+  const year = new Date().getFullYear();
+  const ym = year + '-' + pad(curMonth);
+  const locked = !!locks[ym];
+  const pre = ym + '-';
   const keys = Object.keys(data).filter(k => k.startsWith(pre)).sort().reverse();
   let rows = '';
   let sumM = 0, sumQ = 0, days = 0;
@@ -218,7 +245,7 @@ function renderLog() {
     sumM += mv;
     sumQ += qv;
     days++;
-    const d = Number(k.slice(8)) + '日';
+    const d = Number(k.slice(8)) + '日' + (locked ? ' 🔒' : '');
     rows += line('first', d, 'メビウス', m, 29);
     rows += line('', '', 'IQOS', q, 31);
     rows += '<tr class="total"><td></td><td>合計</td><td class="num">' + (mv + qv) + '本</td><td class="num">' + yen(mv * 29 + qv * 31) + '</td></tr>';
@@ -235,7 +262,9 @@ function renderLog() {
     sumHtml += line('', '', 'IQOS', sumQ, 31);
     sumHtml += '<tr class="total"><td></td><td>合計</td><td class="num">' + totalPc + '本</td><td class="num">' + yen(totalYen) + '</td></tr>';
     sumHtml += '<tr class="avg"><td></td><td>平均(' + days + '日)</td><td class="num">' + avgPc + '本</td><td class="num">' + yen(avgYen) + '</td></tr>';
-    sumHtml += '</table></div>';
+    sumHtml += '</table>';
+    sumHtml += '<button class="lockbtn ' + (locked ? 'on' : 'off') + '" onclick="toggleLock()">' + (locked ? '🔒 ロック解除' : 'この月をロック') + '</button>';
+    sumHtml += '</div>';
     html = '<table>' + rows + '</table>';
   } else {
     html = '<div class="empty">この月の記録はありません</div>';
@@ -263,6 +292,7 @@ function showTop() {
 
 function refreshView() {
   data = load();
+  locks = loadLocks();
   renderTop();
   tick();
 }
@@ -279,9 +309,18 @@ function clearAll() {
   alert('消去しました');
 }
 
+function exportableData() {
+  const out = {};
+  Object.keys(data).forEach(k => {
+    if (!locks[monthKeyOf(k)]) out[k] = data[k];
+  });
+  return out;
+}
+
 function exportFile() {
-  if (!Object.keys(data).length) { alert('保存する記録がありません'); return; }
-  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  const out = exportableData();
+  if (!Object.keys(out).length) { alert('保存する記録がありません(ロック中のみ)'); return; }
+  const blob = new Blob([JSON.stringify(out)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -298,8 +337,10 @@ function pickFile() {
 
 function applyImport(obj) {
   if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) throw new Error('形式エラー');
-  if (!confirm('今のデータを上書きします。よろしいですか?')) return false;
-  data = obj;
+  if (!confirm('ロックされていない月のデータを上書きします。よろしいですか?')) return false;
+  Object.keys(obj).forEach(k => {
+    if (!locks[monthKeyOf(k)]) data[k] = obj[k];
+  });
   save();
   renderTop();
   return true;
@@ -307,7 +348,7 @@ function applyImport(obj) {
 
 function exportText() {
   const ta = document.getElementById('backup');
-  ta.value = JSON.stringify(data);
+  ta.value = JSON.stringify(exportableData());
   ta.focus();
   ta.select();
 }
